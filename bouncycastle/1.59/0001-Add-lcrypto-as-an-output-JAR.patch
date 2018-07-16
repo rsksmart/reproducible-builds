@@ -1,0 +1,45 @@
+From f2beb14d765503e80b5caf333fc50044ea8ec2d0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mart=C3=ADn=20Coll?= <martingonzalezcoll@gmail.com>
+Date: Mon, 16 Jul 2018 11:59:56 -0300
+Subject: [PATCH] Add lcrypto as an output JAR
+
+---
+ ant/bc+-build.xml | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/ant/bc+-build.xml b/ant/bc+-build.xml
+index 295ba7485..bc0750775 100644
+--- a/ant/bc+-build.xml
++++ b/ant/bc+-build.xml
+@@ -257,6 +257,7 @@
+         <!--
+               Lightweight Libraries
+         -->
++        <property name="lcrypto" value="bclcrypto-${target.name}" />
+ 
+         <mkdir dir="${lcrypto.target.dir}" />
+         <mkdir dir="${lcrypto.target.src.dir}" />
+@@ -288,6 +289,20 @@
+                 <path refid="project.classpath" /> 
+             </classpath>
+         </javac>
++
++        <packJar jarbase="${artifacts.jars.dir}/${lcrypto}">
++            <manifest-element>
++                <manifest>
++                    <attribute name="Manifest-Version" value="1.0" />
++                </manifest>
++            </manifest-element>
++            <fileset-element>
++                <fileset dir="${lcrypto.target.classes.dir}">
++                    <include name="**/*.class"/>
++                    <include name="**/*.properties"/>
++                </fileset>
++            </fileset-element>
++        </packJar>
+     </target>
+ 
+     <!--
+-- 
+2.17.1
+
