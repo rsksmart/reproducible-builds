@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.bouncycastle</groupId>
+  <artifactId>bclcrypto-jdk15on</artifactId>
+  <packaging>jar</packaging>
+  <name>Bouncy Castle Lightweight Crypto</name>
+  <version>1.59</version>
+  <description>The Bouncy Castle Crypto package is a Java implementation of cryptographic algorithms. This jar contains only the lightweight API for the Bouncy Castle Cryptography APIs for JDK 1.5 to JDK 1.8.</description>
+  <url>http://www.bouncycastle.org/java.html</url>
+  <licenses>
+    <license>
+      <name>Bouncy Castle Licence</name>
+      <url>http://www.bouncycastle.org/licence.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <url>https://github.com/rsksmart/reproducible_builds/tree/master/bouncycastle/1.59</url>
+  </scm>
+  <issueManagement>
+     <system>GitHub</system>
+     <url>https://github.com/rsksmart/reproducible_builds/issues</url>
+  </issueManagement>
+  <developers>
+    <developer>
+      <id>feedback-bouncycastle-reproducible</id>
+      <name>RSK Team</name>
+      <email>devs@rsk.co</email>
+    </developer>
+  </developers>
+</project>
