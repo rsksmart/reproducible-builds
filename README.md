@@ -12,5 +12,20 @@ RSK will work on building and publishing reproducible versions on of these libra
 
 For more details visit the [Reproducible Builds][2] website.
 
+
+## Maven Repository
+
+You can find the builds in our public Maven repository at `https://deps.rsklabs.io`.
+
+If you are using Gradle:
+
+```gradle
+repositories {
+    maven {
+        url "https://deps.rsklabs.io"
+    }
+}
+```
+
 [1]: https://github.com/rsksmart/rskj
 [2]: https://reproducible-builds.org
