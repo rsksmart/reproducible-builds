@@ -24,3 +24,12 @@ $ docker cp temp-container:/code/bc-java/build/artifacts/jdk1.5/jars/bclcrypto-j
 $ docker rm temp-container
 ```
 
+## Trust on first use (TOFU)
+
+BouncyCastle itself depends on three other dependencies (JUnit, Mail, Activation), which are downloaded from Maven Central.
+Since we haven't yet reproduced those builds, we are trusting current versions following the [TOFU model][tofu].
+We include a verification step which checks known hashes for these dependencies.
+The hashes are included in the `dependencies_shasums.txt` file.
+
+[tofu]: https://en.wikipedia.org/wiki/Trust_on_first_use
+

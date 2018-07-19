@@ -1,0 +1,3 @@
+ae475120e9fcd99b4b00b38329bd61cdc5eb754eee03fe66c01f50e137724f99  /opt/jaf/activation.jar
+269a37dfbb457854aaa8d2c387a07edd1c47e7ec02180753039c143d10fa9eb8  /opt/javamail/mail.jar
+59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a  /opt/junit/junit.jar

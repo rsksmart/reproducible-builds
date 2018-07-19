@@ -12,6 +12,9 @@ RUN wget http://central.maven.org/maven2/javax/mail/javax.mail-api/1.6.1/javax.m
 RUN mkdir -p /opt/jaf
 RUN wget http://central.maven.org/maven2/javax/activation/activation/1.1.1/activation-1.1.1.jar -O /opt/jaf/activation.jar
 
+ADD dependencies_shasums.txt /
+RUN sha256sum --check /dependencies_shasums.txt
+
 RUN git clone https://github.com/bcgit/bc-java.git /code/bc-java
 
 WORKDIR /code/bc-java
