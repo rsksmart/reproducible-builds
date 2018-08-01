@@ -13,7 +13,7 @@ $ docker build -t bitcoinj-0.14.4-rsk-5 .
 
 ```
 $ docker run --rm bitcoinj-0.14.4-rsk-5 sha256sum /code/bitcoinj/core/target/bitcoinj-core-0.14.4-rsk-5.jar
-76f0ce83a5af68c2282bb93444b7c88f02c17e16ac0ba5c373a0b2be7330de99  /code/bitcoinj/core/target/bitcoinj-core-0.14.4-rsk-5.jar
+b5529a9368ebe0462fc978475b53e23e15c429b9d729c95f3152601fcfcfca5d  /code/bitcoinj/core/target/bitcoinj-core-0.14.4-rsk-5.jar
 ```
 
 ## (Optional) Extract JAR from image
