@@ -8,5 +8,5 @@ RUN git clone https://github.com/rsksmart/bitcoinj.git /code/bitcoinj
 WORKDIR /code/bitcoinj
 RUN git checkout v0.14.4-rsk-5
 
-RUN mvn clean package -pl \!wallettemplate -DskipTests
+RUN mvn clean package -DskipTests
 RUN strip-nondeterminism ./core/target/bitcoinj-core-0.14.4-rsk-5.jar
