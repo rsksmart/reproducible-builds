@@ -13,7 +13,7 @@ $ docker build -t bitcoinj-thin-0.14.4-rsk-7 .
 
 ```
 $ docker run --rm bitcoinj-thin-0.14.4-rsk-7 sha256sum /code/bitcoinj-thin/target/bitcoinj-thin-0.14.4-rsk-7.jar
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa /code/bitcoinj/target/bitcoinj-thin-0.14.4-rsk-7.jar
+1d7e79f543b6ce47e9f9471fa03575cadd49ef672dc367bad8a5b3660fbcfa24 /code/bitcoinj/target/bitcoinj-thin-0.14.4-rsk-7.jar
 ```
 
 ## (Optional) Extract JAR from image
