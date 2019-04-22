@@ -6,8 +6,8 @@ RUN apt-get update -y && \
     apt-get autoremove -y && \
     apt-get clean
 
-RUN gpg --keyserver https://secchannel.rsk.co/release.asc --recv-keys 5DECF4415E3B8FA4
-RUN gpg --finger 5DECF4415E3B8FA4
+RUN gpg --keyserver https://secchannel.rsk.co/release.asc --recv-keys 1A92D8942171AFA951A857365DECF4415E3B8FA4
+RUN gpg --finger 1A92D8942171AFA951A857365DECF4415E3B8FA4
 
 RUN git clone --single-branch --depth 1 --branch ORCHID-0.6.2 https://github.com/rsksmart/rskj.git /code/rskj
 
