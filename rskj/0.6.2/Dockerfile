@@ -9,7 +9,7 @@ RUN apt-get update -y && \
 RUN gpg --keyserver https://secchannel.rsk.co/release.asc --recv-keys 5DECF4415E3B8FA4
 RUN gpg --finger 5DECF4415E3B8FA4
 
-RUN git clone --branch ORCHID-0.6.2 https://github.com/rsksmart/rskj.git /code/rskj
+RUN git clone --single-branch --depth 1 --branch ORCHID-0.6.2 https://github.com/rsksmart/rskj.git /code/rskj
 
 WORKDIR /code/rskj
 
