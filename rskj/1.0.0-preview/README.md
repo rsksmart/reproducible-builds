@@ -13,11 +13,11 @@ $ docker build -t rskj-wasabi-1.0.0-preview-reproducible .
 
 ```
 $ docker run --rm rskj-wasabi-1.0.0-preview-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW-all.jar
-8441da0a0208c7e12146e63ce22566266e0eea6ef3bec2e94767fd22dd9c9646  /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW-all.jar
+6b01a187cad148c3674b32515ac35450d32dc2959e7ed2460419ba1b8977054d /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW-all.jar
 $ docker run --rm rskj-wasabi-1.0.0-preview-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW-sources.jar
-7248948fbc0629ea01938cc6ddaca8be2f8c80cf2fc62e2c93268ae0c797e375  /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW-sources.jar
+ba1f263cdf2827a68da07429a43d08d2de63344caab9977b3c20f58057050f8f /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW-sources.jar
 $ docker run --rm rskj-wasabi-1.0.0-preview-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW.jar
-e64316e087e38ec98f897dd418ebff4881bfb0fc6e09e43979c9a556a3f99c56  /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW.jar
+6d29e778f1fc3ee6fa4cffaaae2a2303d076b559c497346526c0eb0a78b00df8 /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW.jar
 $ docker run --rm rskj-wasabi-1.0.0-preview-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW.pom
 c4615e3a03a405f9db2853d3621d37db8fa417ab50ae643635bd376e55d077f3  /code/rskj/rskj-core/build/libs/rskj-core-1.0.0-PREVIEW.pom
 ```
