@@ -15,11 +15,11 @@ If you had already generated this reproducible build prior to its retag, please 
 
 ```
 $ docker run --rm rskj-wasabi-1.1.0-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI-all.jar
-460faab572db3aa9fd41244ef32ca667b5f5ad747fa73abe182a8b510c191334  /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI-all.jar
+20a82720dd39864ae3603b7eb777ed454e4577c7d984b9560017fc4ddd820924  /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI-all.jar
 $ docker run --rm rskj-wasabi-1.1.0-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI-sources.jar
-347eb21fc8b35b84f6c49254999fb923bebfed0a36837137b74deab3dfc47f73  /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI-sources.jar
+0f76a447ecdf7a78c990293a90388c3a316996e66ecc670bb59a0ece3d237dcc  /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI-sources.jar
 $ docker run --rm rskj-wasabi-1.1.0-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI.jar
-69ff143fc80c5370491e63c8262e5907c95d275c59eef7ce7e4f670512ccc10e  /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI.jar
+d233feac37d6e5daca2ffa78d4ece4a3e00fe9ebbca00d0fdf862addc5564fcf  /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI.jar
 $ docker run --rm rskj-wasabi-1.1.0-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI.pom
 1aa633056a24056d0e50d310d1b000595205b46d1a449d63c1cf6381b9257960  /code/rskj/rskj-core/build/libs/rskj-core-1.1.0-WASABI.pom
 ```
