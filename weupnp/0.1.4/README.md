@@ -21,6 +21,6 @@ $ docker run --rm weupnp-0.1.4-reproducible sha256sum /code/weupnp/target/weupnp
 ```
 $ docker run --name temp-container weupnp-0.1.4-reproducible /bin/true
 $ docker cp temp-container:/code/weupnp/target/weupnp-0.1.4.jar ./weupnp-0.1.4.jar
-$ docker cp temp-container:/code/weupnp/pom.xml ./weupnp-0.1.4-reproducible.pom
+$ docker cp temp-container:/code/weupnp/pom.xml ./weupnp-0.1.4.pom
 $ docker rm temp-container
 ```
