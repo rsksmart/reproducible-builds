@@ -20,7 +20,7 @@ $ docker run --rm rskj-wasabi-1.3.0-reproducible sha256sum /code/rskj/rskj-core/
 $ docker run --rm rskj-wasabi-1.3.0-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.3.0-WASABI.jar
 c34c2dbcf2aee1f51b1a0850fa406dece3427b051acf11f2a2ef4d69840278ba /code/rskj/rskj-core/build/libs/rskj-core-1.3.0-WASABI.jar
 $ docker run --rm rskj-wasabi-1.3.0-reproducible sha256sum /code/rskj/rskj-core/build/libs/rskj-core-1.3.0-WASABI.pom
-c34c2dbcf2aee1f51b1a0850fa406dece3427b051acf11f2a2ef4d69840278ba /code/rskj/rskj-core/build/libs/rskj-core-1.3.0-WASABI.pom
+60f87f549f72532cabe8f1583c55006636b99ef29ef6bd1ff4e71b907bffe140 /code/rskj/rskj-core/build/libs/rskj-core-1.3.0-WASABI.pom
 ```
 
 ## (Optional) Extract JAR from image
