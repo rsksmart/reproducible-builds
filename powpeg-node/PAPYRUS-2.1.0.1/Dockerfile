@@ -11,7 +11,7 @@ RUN apt-get update -y && \
 RUN gpg --keyserver https://secchannel.rsk.co/release.asc --recv-keys 1A92D8942171AFA951A857365DECF4415E3B8FA4
 RUN gpg --finger 1A92D8942171AFA951A857365DECF4415E3B8FA4
 
-RUN git clone --single-branch --depth 1 --branch 2.1.0.1_release https://github.com/rsksmart/powpeg-node.git /code/powpeg-node
+RUN git clone --single-branch --depth 1 --branch PAPYRUS-2.1.0.1 https://github.com/rsksmart/powpeg-node.git /code/powpeg-node
 
 WORKDIR /code/powpeg-node
 
