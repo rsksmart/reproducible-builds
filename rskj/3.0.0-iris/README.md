@@ -15,11 +15,11 @@ The last step of the build prints the sha256sum of the files, if, for any reason
 
 ```
 $ docker run --rm rskj/3.0.0-iris sh -c 'sha256sum *'
-ab8d2e2df0c58535ff437f271c9bb0faf20daabf39c9a06a77b209a56c8a5432  rskj-core-3.0.0-IRIS-all.jar
-6b2cc039bd4fe46f059eb2407012830d7c06519433d7400d8015d154a235e419  rskj-core-3.0.0-IRIS-javadoc.jar
-4aec24fb77222c3a6f9677b9f75e248b0de9b55376774711d77a74d87b80908c  rskj-core-3.0.0-IRIS-sources.jar
-22e14520afd4106a34f1d6bc2826c89f79a0b59ea7575a5c572880e98ef713d3  rskj-core-3.0.0-IRIS.jar
-eb7eea5f696b3bf1a89cfd61a84d9af158e12215500d73810de7a9f5ff86bf77  rskj-core-3.0.0-IRIS.pom
+8c975d8489599dbe551e90f96b450ec8a2589385c3176e4ce6ced9d44b09782b  rskj-core-3.0.0-IRIS-all.jar
+9552d2506b8afc6619e6215b1b7af95a78046d65d0af77ea0330d08a141966b4  rskj-core-3.0.0-IRIS-javadoc.jar
+e46c2471d23a5b474bc0bf84a648b976fbc3057493ba48debf80f15333a79dbd  rskj-core-3.0.0-IRIS-sources.jar
+d9b66f76e1aa0aca88d276f92e5de63b0b28a0f1412db3ea5e6fdd91d69528cb  rskj-core-3.0.0-IRIS.jar
+876f981c5d5e9dfa6285393aff271f8ae197cc3550d53d77f13e2c4f2d44a38f  rskj-core-3.0.0-IRIS.pom
 ```
 ## (Optional) Run RSK Node
 ```
