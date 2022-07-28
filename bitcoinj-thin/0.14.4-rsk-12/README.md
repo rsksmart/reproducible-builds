@@ -28,7 +28,7 @@ Should print this:
 
 > docker run --name temp-container bitcoinj-thin-0.14.4-rsk-12 /bin/true
 
-> docker cp temp-container:/code/bitcoinj-thin/target/bitcoinj-thin-0.14.4-rsk-12.jar ./bitcoinj-thin-0.14.4-rsk-11.jar
+> docker cp temp-container:/code/bitcoinj-thin/target/bitcoinj-thin-0.14.4-rsk-12.jar ./bitcoinj-thin-0.14.4-rsk-12.jar
 
 > docker cp temp-container:/code/bitcoinj-thin/pom.xml ./bitcoinj-thin-0.14.4-rsk-12.pom
 
