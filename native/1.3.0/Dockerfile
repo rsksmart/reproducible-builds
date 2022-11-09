@@ -1,5 +1,8 @@
 FROM --platform=linux/amd64 ubuntu:18.04
 
+# ARGS Variables
+ARG NATIVE_LIB_VERSION=1.3.0
+
 # CUSTOM VARIABLES
 ENV GOCUSTOM=/usr/local
 ENV GOLANG=go1.13.5.linux-amd64.tar.gz
@@ -25,20 +28,14 @@ RUN apt-get update && \
 
 RUN apt-get install -y gcc-aarch64-linux-gnu
 
-RUN git clone https://github.com/rsksmart/native.git /code/native
+RUN mkdir /native
 
-WORKDIR /code/native
-RUN git checkout tags/1.3.0 -b 1.3.0
+RUN git clone --single-branch --depth 1 --branch $NATIVE_LIB_VERSION https://github.com/rsksmart/native.git /native
 
-COPY . /native
 WORKDIR /native
 
 # Copying jni headers to java /include
 RUN cp -r jniheaders/include $JAVA_HOME
 
-RUN mkdir /out
-
 # Expose
-WORKDIR /native
-
-CMD ./gradlew --no-daemon clean buildProject ; cp -R ./build/libs/native-* /out/
+RUN ./gradlew buildProject --no-daemon
