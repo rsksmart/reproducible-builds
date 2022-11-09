@@ -30,8 +30,6 @@ RUN git clone https://github.com/rsksmart/native.git /code/native
 WORKDIR /code/native
 RUN git checkout tags/1.3.0 -b 1.3.0
 
-#Cloning native's repo
-#RUN git clone https://github.com/rsksmart/native.git
 COPY . /native
 WORKDIR /native
 
