@@ -37,5 +37,5 @@ WORKDIR /native
 # Copying jni headers to java /include
 RUN cp -r jniheaders/include $JAVA_HOME
 
-# Expose
+# Build
 RUN ./gradlew buildProject --no-daemon
