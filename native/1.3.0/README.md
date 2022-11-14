@@ -6,7 +6,7 @@
 ## Build
 
 ```
-$ docker build --build-arg NATIVE_LIB_VERSION=1.3.0 -t native-1.3.0 .
+$ docker build -t native-1.3.0 .
 ```
 
 ## Verify
