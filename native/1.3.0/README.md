@@ -12,7 +12,7 @@ $ docker build --build-arg NATIVE_LIB_VERSION=1.3.0 -t native-1.3.0 .
 ## Verify
 
 ```
-$ sudo docker run --rm native-1.3.0 sha256sum build/libs/native-1.3.0.jar
+$ docker run --rm native-1.3.0 sha256sum build/libs/native-1.3.0.jar
 cf03d2230ae7cf5349b44ffb3f089193aff17d8b8f6071ff562605d1be99228c  build/libs/native-1.3.0.jar
 ```
 
