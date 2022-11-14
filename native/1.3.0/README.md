@@ -20,6 +20,6 @@ cf03d2230ae7cf5349b44ffb3f089193aff17d8b8f6071ff562605d1be99228c  build/libs/nat
 
 ```
 $ docker run --name temp-container native-1.3.0 /bin/true
-$ docker cp temp-container:build/libs/native-1.3.0.jar ./native-1.3.0.jar
+$ docker cp temp-container:/native/build/libs/native-1.3.0.jar ./native-1.3.0.jar
 $ docker rm temp-container
 ```
