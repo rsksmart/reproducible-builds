@@ -5,7 +5,7 @@ RUN apt-get update -y && \
 
 WORKDIR /code/powpeg-node
 
-RUN gitrev=HOP-TESTNET-HSM3-4.0.1.0 && \
+RUN gitrev=HOP-TESTNET-HSM3-4.0.1.0-rc && \
     git init && \
     git remote add origin https://github.com/rsksmart/powpeg-node.git && \
     git fetch --depth 1 origin "$gitrev" && \
