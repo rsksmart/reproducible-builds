@@ -1,7 +1,7 @@
-# powpeg-node HOP-4.0.1.0
+# powpeg-node HOP-TESTNET-4.0.1.0
 
 * Source: https://github.com/rsksmart/powpeg-node
-* Tag: `HOP-4.0.1.0`
+* Tag: `HOP-TESTNET-4.0.1.0`
 
 ## Build
 
