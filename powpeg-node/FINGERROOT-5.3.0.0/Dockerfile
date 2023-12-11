@@ -5,10 +5,10 @@ RUN apt-get update -y && \
 
 WORKDIR /code/powpeg-node
 
-RUN gitrev=FINGERROOT-5.3.0-rc && \
+RUN gitrev=FINGERROOT-5.3.0.0 && \
     git init && \
     git remote add origin https://github.com/rsksmart/powpeg-node.git && \
-    git fetch --depth 1 origin "$gitrev" && \
+    git fetch --depth 1 origin tag "$gitrev" && \
     git checkout "$gitrev"
 
 RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys A6DBEAC640C5A14B && \
