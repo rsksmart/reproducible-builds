@@ -13,8 +13,8 @@ $ docker build -t bitcoinj/0.15.6-rsk-3 .
 
 ```
 $ docker run --rm bitcoinj/0.15.6-rsk-3 sh -c 'sha256sum * | grep -v javadoc.jar'
-dea5d3f9e4cee70cde6fca8a26f9d4e975431c4b192ddade899fb0ab3bf34ecc  bitcoinj-core-0.15.6-rsk-3-sources.jar
-b1759d2bd9ff18b9631aa7eb57409fe67749d5d64739cff8b7cc0160bcc0f61a  bitcoinj-core-0.15.6-rsk-3.jar
+3bb761ef2b973a678b4181a414441f6b297d79aea5076c7e3c57faddb1847df1  bitcoinj-core-0.15.6-rsk-3-sources.jar
+92ae400ba41e9c25a2a08e257d611f8fcedc3fc13baae40663856cb13860e7fa  bitcoinj-core-0.15.6-rsk-3.jar
 580f70f8ec242c90d8141d2cdd501c1b9ee11b3c70972308e8c47b4f96acf3cf  bitcoinj-core-0.15.6-rsk-3.pom
 ```
 
