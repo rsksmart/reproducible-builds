@@ -12,7 +12,7 @@ RUN gitrev=v0.15.6-rsk-3 && \
     git checkout "$gitrev"
 
 RUN ./gradlew clean build -x test
-RUN strip-nondeterminism ./core/build/libs/bitcoinj-core-0.15.6-rsk-3.jar
+RUN strip-nondeterminism ./core/build/libs/*
 
 FROM openjdk:8-jre-slim-buster as runner
 
