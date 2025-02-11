@@ -1,4 +1,4 @@
-# rskj ARROWHEAD-6.5.1
+# rskj LOVELL-7.0.0
 
 * Source: https://github.com/rsksmart/rskj
 * Tag: `LOVELL-7.0.0`
