@@ -14,6 +14,15 @@ RUN gitrev=segwit_compatible_powpeg_integration && \
 RUN mvn clean package -DskipTests
 RUN strip-nondeterminism ./target/bitcoinj-thin-*
 
+# Create metadata
+# First define variables
+ARG GROUP_ID="org.bitcoinj"
+ARG ARTIFACT_ID="bitcoinj-thin"
+ARG VERSION="0.14.4-rsk-18-SNAPSHOT"
+
+# Then create the metadata file
+RUN echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><metadata><groupId>${GROUP_ID}</groupId><artifactId>${ARTIFACT_ID}</artifactId><versioning><latest>${VERSION}</latest><release>${VERSION}</release><versions><version>${VERSION}</version></versions><lastUpdated>$(date +%Y%m%d%H%M%S)</lastUpdated></versioning></metadata>" > /code/bitcoinj-thin/maven-metadata.xml
+
 FROM openjdk:8-jre-slim-buster as runner
 
 RUN useradd -m rsk
