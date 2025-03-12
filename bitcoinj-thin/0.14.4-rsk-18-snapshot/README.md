@@ -13,14 +13,14 @@ $ docker build -t bitcoinj-thin/0.14.4-rsk-18-snapshot .
 
 ```
 $ docker run --rm bitcoinj-thin/0.14.4-rsk-18-snapshot sh -c 'sha256sum bitcoinj-thin-0.14.4-rsk-18-SNAPSHOT.jar pom.xml'
-beff6002e72162984daa3e7016b1a6fb6d372e5cfb14101a50d150c0adfbda71  bitcoinj-thin-0.14.4-rsk-18-SNAPSHOT.jar
-32fca4aac555f60d824cda58f69e64a7641f60dbbf5ec733966dbe2ded3214d7  pom.xml
+f7912ed60b3aec5d56e8b7c60d1a09e9b3e79d53adc13930c3abc95094f0ba50  bitcoinj-thin-0.14.4-rsk-18-SNAPSHOT.jar
+1bd249e359760cf27f67ba18480cbbec87b48ae7c52e1d710ae6a9eb63399ed9  pom.xml
 ```
 
 ## (Optional) Extract JAR from image
 
 ```
-$ docker run --name temp-container bitcoinj-thin/0.14.4-rsk-18-SNAPSHOT /bin/true
+$ docker run --name temp-container bitcoinj-thin/0.14.4-rsk-18-snapshot /bin/true
 $ docker cp temp-container:/home/bitcoinj-thin/bitcoinj-thin-0.14.4-rsk-18-SNAPSHOT.jar ./bitcoinj-thin-0.14.4-rsk-18-SNAPSHOT.jar
 $ docker cp temp-container:/home/bitcoinj-thin/pom.xml ./bitcoinj-thin-0.14.4-rsk-18-SNAPSHOT.pom
 $ docker rm temp-container
