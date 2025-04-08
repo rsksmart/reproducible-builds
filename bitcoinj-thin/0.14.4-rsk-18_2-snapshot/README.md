@@ -14,7 +14,7 @@ $ docker build -t bitcoinj-thin/0.14.4-rsk-18_2-snapshot .
 ```
 $ docker run --rm bitcoinj-thin/0.14.4-rsk-18_2-snapshot sh -c 'sha256sum bitcoinj-thin-0.14.4-rsk-18_2-SNAPSHOT.jar pom.xml'
 8dfdd3e3a44d31f7aea14f1be404200b34b822499542c5c731e5420f38f73b1a  bitcoinj-thin-0.14.4-rsk-18_2-SNAPSHOT.jar
-874ee3e599cd52d12217c4163c02a75f97358c4ece1a825e3e228f21df4c440a  pom.xml
+1bd249e359760cf27f67ba18480cbbec87b48ae7c52e1d710ae6a9eb63399ed9  pom.xml
 ```
 
 ## (Optional) Extract JAR from image
