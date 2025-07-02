@@ -5,7 +5,7 @@ RUN apt-get update -y && \
 
 WORKDIR /code/bitcoinj-thin
 
-RUN gitrev=segwit_compatible_powpeg_integration_part2 && \
+RUN gitrev=v18_4-SNAPSHOT && \
     git init && \
     git remote add origin https://github.com/rsksmart/bitcoinj-thin.git && \
     git fetch --depth 1 origin "$gitrev" && \
@@ -18,7 +18,7 @@ RUN strip-nondeterminism ./target/bitcoinj-thin-*
 # First define variables
 ARG GROUP_ID="org.bitcoinj"
 ARG ARTIFACT_ID="bitcoinj-thin"
-ARG VERSION="0.14.4-rsk-18_3-SNAPSHOT"
+ARG VERSION="0.14.4-rsk-18_4-SNAPSHOT"
 
 # Then create the metadata file
 RUN echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><metadata><groupId>${GROUP_ID}</groupId><artifactId>${ARTIFACT_ID}</artifactId><versioning><latest>${VERSION}</latest><release>${VERSION}</release><versions><version>${VERSION}</version></versions><lastUpdated>$(date +%Y%m%d%H%M%S)</lastUpdated></versioning></metadata>" > /code/bitcoinj-thin/maven-metadata.xml
