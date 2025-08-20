@@ -7,6 +7,11 @@ name: Build and Upload BitcoinJ Thin
 
 on:
   workflow_dispatch:
+    inputs:
+      bitcoinj-thin-version:
+        description: 'Version of bitcoinj-thin to build (e.g., 0.14.4-rsk-18)'
+        required: true
+        default: '0.14.4-rsk-18'
 permissions: read-all
 
 jobs:
@@ -20,7 +25,7 @@ jobs:
 
     steps:
     - name: Set version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/bitcoinj-thin-}" >> $GITHUB_ENV
+      run: echo "VERSION=${{ github.event.inputs.bitcoinj-thin-version }}" >> $GITHUB_ENV
 
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # V4.2.2
