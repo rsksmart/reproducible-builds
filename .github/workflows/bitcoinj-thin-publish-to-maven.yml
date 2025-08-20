@@ -1,0 +1,190 @@
+## Copyright (c) 2026 Rootstock Labs
+## Copyright (c) 2026 Andres Tarrio <andres.tarrio@rootstocklabs.com>
+## Perform a reproducible build of BitcoinJ Thin and upload the resulting
+## JAR and pom files to an S3 bucket, along with the checksums list for the build
+
+name: BitcoinJ Thin Reproducible Build & Publish
+
+on:
+  push:
+    tags:
+      - 'bitcoinj-thin_*'
+
+concurrency:
+  group: bitcoinj-thin-maven-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Extract folder name from tag
+        id: tag
+        run: |
+          set -euo pipefail
+          # Tags: bitcoinj-thin_<version>[-rc]
+          # Folder: <version> or <version>-snapshot (rc)
+          # Maven:  <version> or <version>-SNAPSHOT (rc)
+          TAG="${GITHUB_REF_NAME#bitcoinj-thin_}"
+          if [[ "$TAG" == *".."* || "$TAG" == *"/"* ]]; then
+            echo "Invalid tag: $TAG"
+            exit 1
+          fi
+
+          IS_RC=false
+          if [[ "${TAG,,}" == *-rc ]]; then
+            IS_RC=true
+            TAG="${TAG:0:${#TAG}-3}"
+          fi
+
+          if [[ -z "$TAG" ]]; then
+            echo "Tag must match bitcoinj-thin_<version>[-rc], got: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
+          if [ "$IS_RC" = true ]; then
+            FOLDER="${TAG}-snapshot"
+            EXPECTED_MAVEN_VERSION="${TAG}-SNAPSHOT"
+          else
+            FOLDER="${TAG}"
+            EXPECTED_MAVEN_VERSION="${TAG}"
+          fi
+
+          echo "folder=${FOLDER}" >> "$GITHUB_OUTPUT"
+          echo "is_rc=${IS_RC}" >> "$GITHUB_OUTPUT"
+          echo "expected_maven_version=${EXPECTED_MAVEN_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Resolved folder=${FOLDER} is_rc=${IS_RC} expected_maven_version=${EXPECTED_MAVEN_VERSION}"
+
+      - name: Validate Dockerfile exists
+        run: |
+          set -euo pipefail
+          if [ ! -f "bitcoinj-thin/${{ steps.tag.outputs.folder }}/Dockerfile" ]; then
+            echo "ERROR: bitcoinj-thin/${{ steps.tag.outputs.folder }}/Dockerfile not found"
+            exit 1
+          fi
+          echo "Found bitcoinj-thin/${{ steps.tag.outputs.folder }}/Dockerfile"
+
+      - name: Build Docker image
+        run: |
+          set -euo pipefail
+          docker build \
+            -t bitcoinj-thin-${{ steps.tag.outputs.folder }} \
+            "bitcoinj-thin/${{ steps.tag.outputs.folder }}"
+
+      - name: Extract artifacts from image
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          mkdir -p libs
+          CID=$(docker run -d bitcoinj-thin-${{ steps.tag.outputs.folder }} /bin/true)
+          docker cp "$CID":/home/bitcoinj-thin/ libs
+          docker rm "$CID"
+
+          JAR=$(find libs/bitcoinj-thin -name 'bitcoinj-thin-*.jar' \
+            ! -name '*-sources.jar' ! -name '*-javadoc.jar' ! -name '*-tests.jar' \
+            | head -1)
+          POM=$(find libs/bitcoinj-thin -name 'pom.xml' | head -1)
+
+          if [ -z "$JAR" ]; then
+            echo "ERROR: bitcoinj-thin-*.jar not found under /home/bitcoinj-thin"
+            find libs/bitcoinj-thin -type f | head -100
+            exit 1
+          fi
+          if [ -z "$POM" ]; then
+            echo "ERROR: pom.xml not found under /home/bitcoinj-thin"
+            find libs/bitcoinj-thin -type f | head -100
+            exit 1
+          fi
+
+          BASENAME=$(basename "$JAR")
+          VERSION="${BASENAME#bitcoinj-thin-}"
+          VERSION="${VERSION%.jar}"
+
+          cp "$JAR" "artifacts/bitcoinj-thin-${VERSION}.jar"
+          cp "$POM" "artifacts/bitcoinj-thin-${VERSION}.pom"
+          rm -rf libs
+
+      - name: Validate Maven artifacts
+        run: |
+          set -euo pipefail
+          ls -lR artifacts/
+          test -n "$(ls artifacts/bitcoinj-thin-*.jar 2>/dev/null)" || { echo "Missing .jar"; exit 1; }
+          test -n "$(ls artifacts/bitcoinj-thin-*.pom 2>/dev/null)" || { echo "Missing .pom"; exit 1; }
+
+      - name: Display extracted artifacts
+        run: |
+          set -euo pipefail
+          echo "Extracted artifacts:"
+          ls -la artifacts/
+          echo ""
+          echo "SHA256 checksums:"
+          sha256sum artifacts/*
+
+      - name: Determine Maven version from artifacts
+        id: version
+        run: |
+          set -euo pipefail
+          ARTIFACT=$(ls artifacts/bitcoinj-thin-*.jar \
+            | grep -v -- '-sources.jar' | grep -v -- '-javadoc.jar' \
+            | head -1)
+          V="${ARTIFACT##*/}"
+          V="${V#bitcoinj-thin-}"
+          V="${V%.jar}"
+          echo "maven-version=${V}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Maven version matches tag
+        run: |
+          set -euo pipefail
+          EXPECTED="${{ steps.tag.outputs.expected_maven_version }}"
+          ACTUAL="${{ steps.version.outputs.maven-version }}"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "ERROR: Maven version from artifacts (${ACTUAL}) does not match expected (${EXPECTED}) for tag ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+          echo "Maven version ${ACTUAL} matches tag convention"
+
+      - name: Set S3 destination
+        id: s3
+        run: |
+          set -euo pipefail
+          S3_DEST="s3://${S3_BUCKET}/co/rsk/bitcoinj/bitcoinj-thin/${{ steps.version.outputs.maven-version }}"
+          echo "dest=${S3_DEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@d01d678e65d6d2bd9d5ca7a95d6f07b00e25f2c2 # v6.2.2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Upload artifacts to S3 Maven repository
+        run: |
+          set -euo pipefail
+          S3_DEST="${{ steps.s3.outputs.dest }}"
+          echo "Uploading to ${S3_DEST}/"
+          aws s3 sync \
+            artifacts/ \
+            "${S3_DEST}/" \
+            --exclude '*' \
+            --include '*.jar' \
+            --include '*.pom'
+
+      - name: Generate and upload checksum file
+        run: |
+          set -euo pipefail
+          S3_DEST="${{ steps.s3.outputs.dest }}"
+          cd artifacts
+          sha256sum * > checksums.txt
+          echo "Generated checksums.txt:"
+          cat checksums.txt
+          aws s3 cp checksums.txt "${S3_DEST}/"
