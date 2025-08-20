@@ -1,0 +1,63 @@
+## Copyright (c) 2025 Rootstock Labs
+## Copyright (c) 2025 Andres Tarrio <andres.tarrio@rootstocklabs.com>
+## Perform a reproducible build of BitcoinJ Thin and upload the resulting 
+## JAR and pom files to an S3 bucket, along with the md5sums list for the build
+
+name: Build and Upload BitcoinJ Thin
+
+on:
+  workflow_dispatch:
+permissions: read-all
+
+jobs:
+  ## build the image and upload it to S3
+  build_and_upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    environment: bitcoinj-thin-cd
+
+    steps:
+    - name: Set version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/bitcoinj-thin-}" >> $GITHUB_ENV
+
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # V4.2.2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+
+    - name: Build Docker image
+      run: |
+        docker build --no-cache -t bitcoinj-thin:${VERSION} bitcoinj-thin/${VERSION} 
+
+    - name: Run container and extract files
+      run: |
+        docker run --name bitcoinj-thin-container -d bitcoinj-thin:${VERSION} /bin/true
+        docker cp bitcoinj-thin-container:/home/bitcoinj-thin/${{ github.ref_name }}.jar ./${{ github.ref_name }}.jar
+        docker cp bitcoinj-thin-container:/home/bitcoinj-thin/pom.xml ./${{ github.ref_name }}.pom
+
+    - name: Set up AWS credentials
+      uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # V4.2.1
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: us-east-1
+
+    - name: Upload to S3 bucket
+      run: |
+        GROUP_ID="org.bitcoinj" && \
+        ARTIFACT_ID="bitcoinj-thin" && \
+        aws s3 sync . s3://rsk-repository/co/rsk/bitcoinj/bitcoinj-thin/${VERSION} \
+          --exclude "*" \
+          --include "bitcoinj-thin-${VERSION}.jar" \
+          --include "bitcoinj-thin-${VERSION}.pom" && \
+        if [[ "${VERSION}" == *-SNAPSHOT ]]; then \
+          echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><metadata><groupId>${GROUP_ID}</groupId><artifactId>${ARTIFACT_ID}</artifactId><versioning><latest>${VERSION}</latest><release>${VERSION}</release><versions><version>${VERSION}</version></versions><lastUpdated>$(date +%Y%m%d%H%M%S)</lastUpdated></versioning></metadata>" > maven-metadata.xml && \
+          aws s3 cp maven-metadata.xml s3://rsk-repository/co/rsk/bitcoinj/bitcoinj-thin/${VERSION}/maven-metadata.xml
+        fi
+
+    - name: Stop and remove container
+      run: |
+        docker stop bitcoinj-thin-container
+        docker rm bitcoinj-thin-container
