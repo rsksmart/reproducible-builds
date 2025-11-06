@@ -27,5 +27,7 @@ WORKDIR /home/rsk
 
 USER rsk
 COPY --from=builder --chown=rsk:rsk /code/rskj/rskj-core/build/libs/rskj-core-* ./
+COPY --from=builder --chown=rsk:rsk /code/rskj/rskj-core/build/rskj-core-*.pom ./
 COPY --from=builder --chown=rsk:rsk /root/.m2/repository/co/rsk/rskj-core/8.1.0-REED/*.module ./
+
 CMD ["java", "-cp", "rskj-core-8.1.0-REED-all.jar", "co.rsk.Start"]
