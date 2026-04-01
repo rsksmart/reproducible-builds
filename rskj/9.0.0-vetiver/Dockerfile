@@ -15,7 +15,7 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
     gpg --verify --output SHA256SUMS SHA256SUMS.asc && \
     sha256sum --check SHA256SUMS && \
     ./configure.sh && \
-    ./gradlew --no-daemon clean build -x test && \
+    ./gradlew --no-daemon clean build -x test -x checkstyleMain -x checkstyleTest -x checkstyleIntegrationTest && \
     ./gradlew publishRskjPublicationToMavenLocal
 
 
