@@ -12,4 +12,9 @@ The list of skills is here, take a look on then to use it, or ask the agent to h
 
 - `rskj-reproducible-build`
   - **Location:** `.claude/skills/rskj-reproducible-build/SKILL.md`
+  - **Purpose:** Generate the reproducible build setup (Dockerfile + README) for a new rskj release, build the Docker image, capture sha256 hashes, and open a PR.
+
+- `verify-reproducible-build`
+  - **Location:** `.claude/skills/verify-reproducible-build/SKILL.md`
+  - **Purpose:** Verify any reproducible build (rskj, powpeg-node, bitcoinj, bitcoinj-thin, native) by building the Docker image and computing sha256 hashes, with optional comparison against known-good values.
 
