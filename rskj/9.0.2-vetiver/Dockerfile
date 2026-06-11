@@ -1,7 +1,8 @@
 FROM eclipse-temurin:17-jdk@sha256:08295ab0f5007a37cbcc6679a8447a7278d9403f9f82acd80ed08cd10921e026 AS builder
 
 RUN apt-get update -y && \
-    apt-get install -qq --no-install-recommends git curl gnupg
+    apt-get install -y -qq --no-install-recommends git curl gnupg && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code/rskj
 
