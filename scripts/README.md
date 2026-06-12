@@ -39,15 +39,15 @@ nothing is hardcoded, so it won't drift as conventions change.
 
 The PR body is filled in with a brief description and the artifact hashes:
 
-```
+~~~~
 <component> reproducible build for version <version>
 
-​```
+~~~
 <sha256>  <artifact-1>
 <sha256>  <artifact-2>
 ...
-​```
-```
+~~~
+~~~~
 
 ### Requirements
 
@@ -141,8 +141,7 @@ existing build and commit the change.
 - The branch is created from `<remote>/<base>` after fetching (and before any files are
   written into the repo), so it doesn't depend on — or collide with — your local state.
 - If `gh` isn't installed, the script prints the PR title and a compare URL to open manually.
-- Verifying an existing/published release (the inverse of this) is a separate, standalone
-  tool: `verify-release.js`.
+- Verifying a reproducible-build PR is handled by the `validate` mode of `generate-build.js` (see below).
 
 ## Validating a PR (`validate`)
 

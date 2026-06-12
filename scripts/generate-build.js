@@ -425,11 +425,15 @@ function openPr({ repoDir, remote, base, branch, component, tag, version, shaBlo
   const title = `Add ${component.name} reproducible build for ${tag}`;
   const body = `${component.name} reproducible build for version ${version}\n\n${hashFence(shaBlock)}\n`;
 
+  const slug = githubSlug(repoDir, remote);
+  const owner = slug ? slug.split('/')[0] : null;
+  const head = owner && owner !== UPSTREAM.split('/')[0] ? `${owner}:${branch}` : branch;
+
   if (has('gh')) {
     step('Opening a PR with gh');
     const r = spawnSync(
       'gh',
-      ['pr', 'create', '--repo', UPSTREAM, '--base', base, '--head', branch, '--title', title, '--body', body],
+      ['pr', 'create', '--repo', UPSTREAM, '--base', base, '--head', head, '--title', title, '--body', body],
       { cwd: repoDir, stdio: 'inherit' },
     );
     if (!r.error && r.status === 0) return;
@@ -437,13 +441,10 @@ function openPr({ repoDir, remote, base, branch, component, tag, version, shaBlo
   } else {
     step('PR info (gh not found — copy/paste to open the PR)');
   }
-  const slug = githubSlug(repoDir, remote);
-  const owner = slug ? slug.split('/')[0] : null;
-  const head = owner && owner !== UPSTREAM.split('/')[0] ? `${owner}:${branch}` : branch;
   const q = `expand=1&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   console.log(`  title: ${title}`);
   console.log(`  body:\n${body.split('\n').map((l) => '    ' + l).join('\n')}`);
-  console.log(`  url:   https://github.com/${UPSTREAM}/compare/${base}...${encodeURIComponent(head)}?${q}`);
+  console.log(`  url:   https://github.com/${UPSTREAM}/compare/${base}...${encodeURI(head)}?${q}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -497,11 +498,17 @@ async function modeValidate(prUrl, opts) {
   const headRef = meta.head && meta.head.ref;
   if (!headRef) die('could not determine the PR head ref.', 1);
 
-  const files = await ghJson(`https://api.github.com/repos/${pr.owner}/${pr.repo}/pulls/${pr.number}/files?per_page=100`);
+  let files = [];
+  for (let page = 1; ; page++) {
+    const pageFiles = await ghJson(
+      `https://api.github.com/repos/${pr.owner}/${pr.repo}/pulls/${pr.number}/files?per_page=100&page=${page}`,
+    );
+    files = files.concat(pageFiles);
+    if (pageFiles.length < 100) break;
+  }
   let build;
   try {
     build = detectBuildFromFiles(files.map((f) => f.filename));
-  } catch (e) {
     die(e.message, 1); // e.g. PR touches multiple build folders
   }
   if (!build) die('this PR does not add a recognized rskj/ or powpeg-node/ build folder.', 1);
@@ -509,7 +516,7 @@ async function modeValidate(prUrl, opts) {
   console.log(c.dim(`  build: ${component.subdir}/${folder}   (head ${headRepo}@${headRef})`));
 
   // 2. Fetch the PR's Dockerfile + README from the head ref.
-  const rawBase = `https://raw.githubusercontent.com/${headRepo}/${encodeURIComponent(headRef)}/${component.subdir}/${folder}`;
+  const rawBase = `https://raw.githubusercontent.com/${headRepo}/${encodeURI(headRef)}/${component.subdir}/${folder}`;
   step('Fetching the build files from the PR');
   const dockerfile = await fetchTextOrDie(`${rawBase}/Dockerfile`, 'Dockerfile');
   const prReadme = await fetchTextOrDie(`${rawBase}/README.md`, 'README.md');
