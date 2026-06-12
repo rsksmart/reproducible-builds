@@ -50,6 +50,24 @@ const { spawn, spawnSync } = require('child_process');
 
 const UPSTREAM = 'rsksmart/reproducible-builds'; // canonical repo, for PR compare URLs
 
+// Pure logic (component conventions, parsing, substitution, sha handling) lives
+// in lib.js and is unit-tested in lib.test.js. This file is the I/O + flows.
+const {
+  COMPONENTS,
+  parseTag,
+  inferComponent,
+  cmpSemver,
+  substituteVersion,
+  injectShaBlock,
+  parseShaLine,
+  parseShaMap,
+  mapsEqual,
+  componentShell,
+  hashFence,
+  parsePrUrl,
+  detectBuildFromFiles,
+} = require('./lib');
+
 // ---------------------------------------------------------------------------
 // Terminal helpers
 // ---------------------------------------------------------------------------
@@ -69,100 +87,6 @@ const die = (msg, code = 2) => {
   process.exit(code);
 };
 const step = (msg) => console.log(c.cyan('• ') + c.bold(msg));
-
-// ---------------------------------------------------------------------------
-// Components
-// ---------------------------------------------------------------------------
-
-const SEMVER = '\\d+(?:\\.\\d+){1,3}';
-
-const COMPONENTS = {
-  rskj: {
-    name: 'rskj',
-    sourceRepo: 'rsksmart/rskj',
-    subdir: 'rskj',
-    // folder: "<semver>-<codename>" e.g. 9.0.2-vetiver
-    folder: ({ semver, codename }) => `${semver}-${codename.toLowerCase()}`,
-    parseFolder: (name) => {
-      const m = name.match(new RegExp(`^(${SEMVER})-(.+)$`));
-      return m ? { semver: m[1], codename: m[2].toLowerCase() } : null;
-    },
-    fatJar: ({ semver, codename }) => `rskj-core-${semver}-${codename.toUpperCase()}-all.jar`,
-  },
-  'powpeg-node': {
-    name: 'powpeg-node',
-    sourceRepo: 'rsksmart/powpeg-node',
-    subdir: 'powpeg-node',
-    // folder: "<CODENAME>-<semver>" e.g. VETIVER-9.0.0.0 (also the tag)
-    folder: ({ semver, codename }) => `${codename.toUpperCase()}-${semver}`,
-    parseFolder: (name) => {
-      const m = name.match(new RegExp(`^(.+)-(${SEMVER})$`));
-      return m ? { semver: m[2], codename: m[1].toLowerCase() } : null;
-    },
-    fatJar: ({ semver, codename }) => `federate-node-${codename.toUpperCase()}-${semver}-all.jar`,
-  },
-};
-
-// ---------------------------------------------------------------------------
-// Tag parsing / component inference / version substitution
-// ---------------------------------------------------------------------------
-
-// Tags are "<CODENAME>-<semver>", e.g. VETIVER-9.0.2, HOP-TESTNET-4.0.1.0.
-function parseTag(tag) {
-  const m = String(tag).trim().match(new RegExp(`^(.+)-(${SEMVER})$`));
-  return m ? { codename: m[1].toLowerCase(), semver: m[2] } : null;
-}
-
-// powpeg-node uses 4-part versions (9.0.0.0); rskj uses 3 (9.0.2).
-function inferComponent(parsed) {
-  return parsed && parsed.semver.split('.').length >= 4 ? 'powpeg-node' : 'rskj';
-}
-
-function cmpSemver(a, b) {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const d = (pa[i] || 0) - (pb[i] || 0);
-    if (d) return d;
-  }
-  return 0;
-}
-
-// Replace every encoding of the old version with the new one. Each version
-// appears only in these four combined forms (verified against real folders),
-// so there's no risky bare-number substitution.
-function substituteVersion(text, oldP, newP) {
-  const forms = (p) => {
-    const cn = p.codename.toLowerCase();
-    const CN = p.codename.toUpperCase();
-    return [`${CN}-${p.semver}`, `${p.semver}-${CN}`, `${p.semver}-${cn}`, `${cn}-${p.semver}`];
-  };
-  const from = forms(oldP);
-  const to = forms(newP);
-  let out = text;
-  for (let i = 0; i < from.length; i++) out = out.split(from[i]).join(to[i]);
-  return out;
-}
-
-// Replace the contiguous run of "<sha256>  <file>" lines with a fresh block.
-function injectShaBlock(readme, block) {
-  const isHash = (l) => /^[0-9a-fA-F]{64}\s+\S+$/.test(l.trim());
-  const lines = readme.split('\n');
-  let start = lines.findIndex(isHash);
-  if (start === -1) throw new Error('template README has no sha256 block to replace');
-  let end = start;
-  while (end + 1 < lines.length && isHash(lines[end + 1])) end++;
-  lines.splice(start, end - start + 1, ...block.split('\n'));
-  return lines.join('\n');
-}
-
-function parseShaLine(block, filename) {
-  for (const line of block.split('\n')) {
-    const m = line.trim().match(/^([0-9a-fA-F]{64})\s+(\S+)$/);
-    if (m && m[2] === filename) return m[1].toLowerCase();
-  }
-  return null;
-}
 
 // ---------------------------------------------------------------------------
 // Shell / git helpers
@@ -497,16 +421,6 @@ async function main() {
   console.log(c.green('\n✔ done.\n'));
 }
 
-// Mirror the shell the template README uses in its "docker run ... -c" line.
-function componentShell(readme) {
-  return /docker run[^\n]*\bbash -c\b/.test(readme) ? 'bash' : 'sh';
-}
-
-// A fenced code block listing the artifacts and their hashes.
-function hashFence(shaBlock) {
-  return '```\n' + shaBlock + '\n```';
-}
-
 function openPr({ repoDir, remote, base, branch, component, tag, version, shaBlock }) {
   const title = `Add ${component.name} reproducible build for ${tag}`;
   const body = `${component.name} reproducible build for version ${version}\n\n${hashFence(shaBlock)}\n`;
@@ -536,11 +450,6 @@ function openPr({ repoDir, remote, base, branch, component, tag, version, shaBlo
 // validate mode: reproduce a PR's build and comment the result
 // ---------------------------------------------------------------------------
 
-function parsePrUrl(url) {
-  const m = String(url || '').match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
-  return m ? { owner: m[1], repo: m[2], number: m[3] } : null;
-}
-
 async function ghJson(url) {
   const res = await fetch(url, { headers: ghHeaders() });
   if (res.status === 404) throw new Error(`not found: ${url}`);
@@ -552,37 +461,6 @@ async function fetchTextOrDie(url, label) {
   const res = await fetch(url, { headers: { 'User-Agent': 'rsk-build-generator' } });
   if (!res.ok) die(`could not fetch ${label} from the PR (${res.status} ${res.statusText}):\n  ${url}`, 1);
   return res.text();
-}
-
-// Map filename -> hash from a "<sha256>  <file>" block.
-function parseShaMap(text) {
-  const map = new Map();
-  for (const line of String(text).split('\n')) {
-    const m = line.trim().match(/^([0-9a-fA-F]{64})\s+(\S+)$/);
-    if (m) map.set(m[2], m[1].toLowerCase());
-  }
-  return map;
-}
-
-function mapsEqual(a, b) {
-  if (a.size !== b.size) return false;
-  for (const [k, v] of a) if (b.get(k) !== v) return false;
-  return true;
-}
-
-// Identify which build folder a PR adds from its changed file paths.
-function detectBuildFromFiles(filenames) {
-  const found = new Map();
-  for (const f of filenames) {
-    const m = String(f).match(/^(rskj|powpeg-node)\/([^/]+)\//);
-    if (!m) continue;
-    const component = COMPONENTS[m[1]];
-    if (component && component.parseFolder(m[2])) found.set(`${m[1]}/${m[2]}`, { component, folder: m[2] });
-  }
-  const vals = [...found.values()];
-  if (vals.length === 1) return vals[0];
-  if (vals.length > 1) die(`PR touches multiple build folders: ${[...found.keys()].join(', ')}. Validate one at a time.`);
-  return null;
 }
 
 async function postComment(prUrl, pr, body) {
@@ -620,7 +498,12 @@ async function modeValidate(prUrl, opts) {
   if (!headRef) die('could not determine the PR head ref.', 1);
 
   const files = await ghJson(`https://api.github.com/repos/${pr.owner}/${pr.repo}/pulls/${pr.number}/files?per_page=100`);
-  const build = detectBuildFromFiles(files.map((f) => f.filename));
+  let build;
+  try {
+    build = detectBuildFromFiles(files.map((f) => f.filename));
+  } catch (e) {
+    die(e.message, 1); // e.g. PR touches multiple build folders
+  }
   if (!build) die('this PR does not add a recognized rskj/ or powpeg-node/ build folder.', 1);
   const { component, folder } = build;
   console.log(c.dim(`  build: ${component.subdir}/${folder}   (head ${headRepo}@${headRef})`));
@@ -683,20 +566,3 @@ async function modeValidate(prUrl, opts) {
 if (require.main === module) {
   main().catch((e) => die(e.stack || e.message, 1));
 }
-
-module.exports = {
-  COMPONENTS,
-  parseTag,
-  inferComponent,
-  cmpSemver,
-  substituteVersion,
-  injectShaBlock,
-  parseShaLine,
-  parseShaMap,
-  mapsEqual,
-  componentShell,
-  githubSlug,
-  hashFence,
-  parsePrUrl,
-  detectBuildFromFiles,
-};

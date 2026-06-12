@@ -2,6 +2,14 @@
 
 Tooling for maintaining this repository.
 
+| File | Purpose |
+| --- | --- |
+| `generate-build.js` | CLI: the `generate` and `validate` commands, plus all I/O (git, Docker, GitHub). |
+| `lib.js` | Pure, side-effect-free logic (component conventions, tag parsing, version substitution, sha-block handling). |
+| `lib.test.js` | Unit tests for `lib.js`. Run from this folder: `node --test lib.test.js`. |
+
+All zero-dependency — just Node. There's no build step and nothing to install.
+
 ## generate-build.js
 
 Generates a reproducible-build entry for a release tag end to end: it scaffolds the folder,
