@@ -23,7 +23,7 @@ const COMPONENTS = {
     // folder: "<semver>-<codename>" e.g. 9.0.2-vetiver
     folder: ({ semver, codename }) => `${semver}-${codename.toLowerCase()}`,
     parseFolder: (name) => {
-      const m = name.match(new RegExp(`^(${SEMVER})-(.+)$`));
+      const m = name.match(new RegExp(`^(${SEMVER})-([A-Za-z0-9-]+)$`));
       return m ? { semver: m[1], codename: m[2].toLowerCase() } : null;
     },
     fatJar: ({ semver, codename }) => `rskj-core-${semver}-${codename.toUpperCase()}-all.jar`,
@@ -35,7 +35,7 @@ const COMPONENTS = {
     // folder: "<CODENAME>-<semver>" e.g. VETIVER-9.0.0.0 (also the tag)
     folder: ({ semver, codename }) => `${codename.toUpperCase()}-${semver}`,
     parseFolder: (name) => {
-      const m = name.match(new RegExp(`^(.+)-(${SEMVER})$`));
+      const m = name.match(new RegExp(`^([A-Za-z0-9-]+)-(${SEMVER})$`));
       return m ? { semver: m[2], codename: m[1].toLowerCase() } : null;
     },
     fatJar: ({ semver, codename }) => `federate-node-${codename.toUpperCase()}-${semver}-all.jar`,
@@ -44,7 +44,7 @@ const COMPONENTS = {
 
 // Tags are "<CODENAME>-<semver>", e.g. VETIVER-9.0.2, HOP-TESTNET-4.0.1.0.
 function parseTag(tag) {
-  const m = String(tag).trim().match(new RegExp(`^(.+)-(${SEMVER})$`));
+  const m = String(tag).trim().match(new RegExp(`^([A-Za-z0-9-]+)-(${SEMVER})$`));
   return m ? { codename: m[1].toLowerCase(), semver: m[2] } : null;
 }
 

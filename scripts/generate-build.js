@@ -509,6 +509,7 @@ async function modeValidate(prUrl, opts) {
   let build;
   try {
     build = detectBuildFromFiles(files.map((f) => f.filename));
+  } catch (e) {
     die(e.message, 1); // e.g. PR touches multiple build folders
   }
   if (!build) die('this PR does not add a recognized rskj/ or powpeg-node/ build folder.', 1);
