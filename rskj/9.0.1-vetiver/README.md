@@ -11,7 +11,7 @@ $ docker build -t rskj/9.0.1-vetiver .
 
 ## Verify
 
-The last step of the build prints the sha256sum of the files, if, for any reason there's a need to recheck the hash the following commands can be used to generate them.
+Run the following command to verify the sha256sum of the built artifacts matches the expected values:
 
 ```
 $ docker run --rm rskj/9.0.1-vetiver sh -c 'sha256sum * | grep -v javadoc.jar'
