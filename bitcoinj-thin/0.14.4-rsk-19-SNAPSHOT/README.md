@@ -23,5 +23,6 @@ e2ee87b5ac4963f733b0321fd4f3e79537a943dcb84e2cc8d7b23e782e1731b7  bitcoinj-thin-
 $ docker run --name temp-container bitcoinj-thin/0.14.4-rsk-19-snapshot /bin/true
 $ docker cp temp-container:/home/bitcoinj-thin/bitcoinj-thin-0.14.4-rsk-19-SNAPSHOT.jar ./bitcoinj-thin-0.14.4-rsk-19-SNAPSHOT.jar
 $ docker cp temp-container:/home/bitcoinj-thin/pom.xml ./pom.xml
+$ docker cp temp-container:/home/bitcoinj-thin/maven-metadata.xml ./maven-metadata.xml
 $ docker rm temp-container
 ```
