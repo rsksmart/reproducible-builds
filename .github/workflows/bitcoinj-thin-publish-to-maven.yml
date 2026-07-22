@@ -67,32 +67,39 @@ jobs:
           echo "Resolved folder=${FOLDER} is_rc=${IS_RC} expected_maven_version=${EXPECTED_MAVEN_VERSION}"
 
       - name: Validate Dockerfile exists
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
         run: |
           set -euo pipefail
-          if [ ! -f "bitcoinj-thin/${{ steps.tag.outputs.folder }}/Dockerfile" ]; then
-            echo "ERROR: bitcoinj-thin/${{ steps.tag.outputs.folder }}/Dockerfile not found"
+          if [ ! -f "bitcoinj-thin/${FOLDER}/Dockerfile" ]; then
+            echo "ERROR: bitcoinj-thin/${FOLDER}/Dockerfile not found"
             exit 1
           fi
-          echo "Found bitcoinj-thin/${{ steps.tag.outputs.folder }}/Dockerfile"
+          echo "Found bitcoinj-thin/${FOLDER}/Dockerfile"
 
       - name: Build Docker image
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
         run: |
           set -euo pipefail
           docker build \
-            -t bitcoinj-thin-${{ steps.tag.outputs.folder }} \
-            "bitcoinj-thin/${{ steps.tag.outputs.folder }}"
+            -t "bitcoinj-thin-${FOLDER}" \
+            "bitcoinj-thin/${FOLDER}"
 
       - name: Extract artifacts from image
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
         run: |
           set -euo pipefail
           mkdir -p artifacts
           mkdir -p libs
-          CID=$(docker run -d bitcoinj-thin-${{ steps.tag.outputs.folder }} /bin/true)
+          CID=$(docker run -d "bitcoinj-thin-${FOLDER}" /bin/true)
           docker cp "$CID":/home/bitcoinj-thin/ libs
           docker rm "$CID"
 
           JAR=$(find libs/bitcoinj-thin -name 'bitcoinj-thin-*.jar' \
             ! -name '*-sources.jar' ! -name '*-javadoc.jar' ! -name '*-tests.jar' \
+            ! -name '*-bundled.jar' \
             | head -1)
           POM=$(find libs/bitcoinj-thin -name 'pom.xml' | head -1)
 
@@ -144,10 +151,11 @@ jobs:
           echo "maven-version=${V}" >> "$GITHUB_OUTPUT"
 
       - name: Validate Maven version matches tag
+        env:
+          EXPECTED: ${{ steps.tag.outputs.expected_maven_version }}
+          ACTUAL: ${{ steps.version.outputs.maven-version }}
         run: |
           set -euo pipefail
-          EXPECTED="${{ steps.tag.outputs.expected_maven_version }}"
-          ACTUAL="${{ steps.version.outputs.maven-version }}"
           if [ "$ACTUAL" != "$EXPECTED" ]; then
             echo "ERROR: Maven version from artifacts (${ACTUAL}) does not match expected (${EXPECTED}) for tag ${GITHUB_REF_NAME}"
             exit 1
@@ -156,9 +164,11 @@ jobs:
 
       - name: Set S3 destination
         id: s3
+        env:
+          MAVEN_VERSION: ${{ steps.version.outputs.maven-version }}
         run: |
           set -euo pipefail
-          S3_DEST="s3://${S3_BUCKET}/co/rsk/bitcoinj/bitcoinj-thin/${{ steps.version.outputs.maven-version }}"
+          S3_DEST="s3://${S3_BUCKET}/co/rsk/bitcoinj/bitcoinj-thin/${MAVEN_VERSION}"
           echo "dest=${S3_DEST}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
@@ -168,9 +178,10 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Upload artifacts to S3 Maven repository
+        env:
+          S3_DEST: ${{ steps.s3.outputs.dest }}
         run: |
           set -euo pipefail
-          S3_DEST="${{ steps.s3.outputs.dest }}"
           echo "Uploading to ${S3_DEST}/"
           aws s3 sync \
             artifacts/ \
@@ -180,9 +191,10 @@ jobs:
             --include '*.pom'
 
       - name: Generate and upload checksum file
+        env:
+          S3_DEST: ${{ steps.s3.outputs.dest }}
         run: |
           set -euo pipefail
-          S3_DEST="${{ steps.s3.outputs.dest }}"
           cd artifacts
           sha256sum * > checksums.txt
           echo "Generated checksums.txt:"
