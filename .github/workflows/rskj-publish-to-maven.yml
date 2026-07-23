@@ -1,7 +1,7 @@
 ## Copyright (c) 2026 Rootstock Labs
 ## Copyright (c) 2026 Andres Tarrio <andres.tarrio@rootstocklabs.com>
 ## Perform a reproducible build of RSKJ and upload the resulting 
-## JAR and pom files to an S3 bucket, along with the md5sums list for the build
+## JAR and pom files to an S3 bucket, along with the sha256sum list for the build
 
 name: RSKj Reproducible Build & Publish
 
@@ -81,27 +81,33 @@ jobs:
           echo "Resolved folder=${FOLDER} is_rc=${IS_RC} expected_maven_version=${EXPECTED_MAVEN_VERSION}"
 
       - name: Validate Dockerfile exists
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
         run: |
           set -euo pipefail
-          if [ ! -f "rskj/${{ steps.tag.outputs.folder }}/Dockerfile" ]; then
-            echo "ERROR: rskj/${{ steps.tag.outputs.folder }}/Dockerfile not found"
+          if [ ! -f "rskj/${FOLDER}/Dockerfile" ]; then
+            echo "ERROR: rskj/${FOLDER}/Dockerfile not found"
             exit 1
           fi
-          echo "Found rskj/${{ steps.tag.outputs.folder }}/Dockerfile"
+          echo "Found rskj/${FOLDER}/Dockerfile"
 
       - name: Build Docker image
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
         run: |
           set -euo pipefail
           docker build \
-            -t rskj-${{ steps.tag.outputs.folder }} \
-            "rskj/${{ steps.tag.outputs.folder }}"
+            -t rskj-${FOLDER} \
+            "rskj/${FOLDER}"
 
       - name: Extract artifacts from image
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
         run: |
           set -euo pipefail
           mkdir -p artifacts
           mkdir -p libs
-          CID=$(docker run -d rskj-${{ steps.tag.outputs.folder }} /bin/true)
+          CID=$(docker run -d rskj-${FOLDER} /bin/true)
           docker cp "$CID":/home/rsk/ libs
           mv libs/rsk/* artifacts/
           rm -rf libs
@@ -137,10 +143,11 @@ jobs:
           echo "maven-version=${V}" >> "$GITHUB_OUTPUT"
 
       - name: Validate Maven version matches tag
+        env:
+          EXPECTED: ${{ steps.tag.outputs.expected_maven_version }}
+          ACTUAL: ${{ steps.version.outputs.maven-version }}
         run: |
           set -euo pipefail
-          EXPECTED="${{ steps.tag.outputs.expected_maven_version }}"
-          ACTUAL="${{ steps.version.outputs.maven-version }}"
           if [ "$ACTUAL" != "$EXPECTED" ]; then
             echo "ERROR: Maven version from artifacts (${ACTUAL}) does not match expected (${EXPECTED}) for tag ${GITHUB_REF_NAME}"
             exit 1
@@ -149,9 +156,11 @@ jobs:
 
       - name: Set S3 destination
         id: s3
+        env:
+          MAVEN_VERSION: ${{ steps.version.outputs.maven-version }}
         run: |
           set -euo pipefail
-          S3_DEST="s3://${S3_BUCKET}/co/rsk/rskj-core/${{ steps.version.outputs.maven-version }}"
+          S3_DEST="s3://${S3_BUCKET}/co/rsk/rskj-core/${MAVEN_VERSION}"
           echo "dest=${S3_DEST}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
@@ -161,9 +170,10 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Upload artifacts to S3 Maven repository
+        env:
+          S3_DEST: ${{ steps.s3.outputs.dest }}
         run: |
           set -euo pipefail
-          S3_DEST="${{ steps.s3.outputs.dest }}"
           echo "Uploading to ${S3_DEST}/"
           aws s3 sync \
             artifacts/ \
@@ -174,11 +184,12 @@ jobs:
             --include '*.module'
 
       - name: Generate and upload checksum file
+        env:
+          S3_DEST: ${{ steps.s3.outputs.dest }}
         run: |
           set -euo pipefail
-          S3_DEST="${{ steps.s3.outputs.dest }}"
           cd artifacts
-          sha256sum * > checksums.txt
+          sha256sum * | grep -v "javadoc.jar" > checksums.txt
           echo "Generated checksums.txt:"
           cat checksums.txt
           aws s3 cp checksums.txt "${S3_DEST}/"
