@@ -1,0 +1,195 @@
+## Copyright (c) 2026 Rootstock Labs
+## Copyright (c) 2026 Andres Tarrio <andres.tarrio@rootstocklabs.com>
+## Perform a reproducible build of RSKJ and upload the resulting 
+## JAR and pom files to an S3 bucket, along with the sha256sum list for the build
+
+name: RSKj Reproducible Build & Publish
+
+on:
+  push:
+    tags:
+      - 'rskj_*'
+
+concurrency:
+  group: rskj-maven-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Extract folder name from tag
+        id: tag
+        run: |
+          set -euo pipefail
+          # Tags: rskj_<CODENAME>-<MAJOR.MINOR.PATCH>[-rc]
+          # Folder: <MAJOR.MINOR.PATCH>-<codename>
+          # Maven:  <MAJOR.MINOR.PATCH>-SNAPSHOT (rc) or <MAJOR.MINOR.PATCH>-<CODENAME>
+          TAG="${GITHUB_REF_NAME#rskj_}"
+          if [[ "$TAG" == *".."* || "$TAG" == *"/"* ]]; then
+            echo "Invalid tag: $TAG"
+            exit 1
+          fi
+
+          IS_RC=false
+          if [[ "${TAG,,}" == *-rc ]]; then
+            IS_RC=true
+            TAG="${TAG:0:${#TAG}-3}"
+          fi
+
+          if [[ ! "$TAG" =~ ^([A-Za-z][A-Za-z0-9]*)-([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Tag must match rskj_<CODENAME>-<MAJOR.MINOR.PATCH>[-rc], got: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
+          CODENAME="${BASH_REMATCH[1]}"
+          MAJOR="${BASH_REMATCH[2]}"
+          MINOR="${BASH_REMATCH[3]}"
+          PATCH="${BASH_REMATCH[4]}"
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          if [ "$IS_RC" = true ]; then
+            FOLDER="${VERSION}-snapshot"
+          else
+            FOLDER="${VERSION}-${CODENAME,,}"
+          fi
+
+          if [ "$MAJOR" -lt 8 ] || { [ "$MAJOR" -eq 8 ] && [ "$MINOR" -lt 1 ]; }; then
+            echo "Only rskj 8.1.0-reed and newer are supported for Maven publish"
+            exit 1
+          fi
+
+          if [ "$IS_RC" = true ]; then
+            EXPECTED_MAVEN_VERSION="${VERSION}-SNAPSHOT"
+          else
+            EXPECTED_MAVEN_VERSION="${VERSION}-${CODENAME^^}"
+          fi
+
+          echo "folder=${FOLDER}" >> "$GITHUB_OUTPUT"
+          echo "is_rc=${IS_RC}" >> "$GITHUB_OUTPUT"
+          echo "expected_maven_version=${EXPECTED_MAVEN_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Resolved folder=${FOLDER} is_rc=${IS_RC} expected_maven_version=${EXPECTED_MAVEN_VERSION}"
+
+      - name: Validate Dockerfile exists
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
+        run: |
+          set -euo pipefail
+          if [ ! -f "rskj/${FOLDER}/Dockerfile" ]; then
+            echo "ERROR: rskj/${FOLDER}/Dockerfile not found"
+            exit 1
+          fi
+          echo "Found rskj/${FOLDER}/Dockerfile"
+
+      - name: Build Docker image
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
+        run: |
+          set -euo pipefail
+          docker build \
+            -t rskj-${FOLDER} \
+            "rskj/${FOLDER}"
+
+      - name: Extract artifacts from image
+        env:
+          FOLDER: ${{ steps.tag.outputs.folder }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          mkdir -p libs
+          CID=$(docker run -d rskj-${FOLDER} /bin/true)
+          docker cp "$CID":/home/rsk/ libs
+          mv libs/rsk/* artifacts/
+          rm -rf libs
+          docker rm "$CID"
+
+      - name: Validate Maven artifacts
+        run: |
+          set -euo pipefail
+          ls -lR artifacts/
+          test -n "$(ls artifacts/rskj-core-*.jar 2>/dev/null)" || { echo "Missing .jar"; exit 1; }
+          test -n "$(ls artifacts/rskj-core-*.pom 2>/dev/null)" || { echo "Missing .pom"; exit 1; }
+          test -n "$(ls artifacts/rskj-core-*.module 2>/dev/null)" || { echo "Missing .module"; exit 1; }
+
+      - name: Display extracted artifacts
+        run: |
+          set -euo pipefail
+          echo "Extracted artifacts:"
+          ls -la artifacts/
+          echo ""
+          echo "SHA256 checksums:"
+          sha256sum artifacts/*
+
+      - name: Determine Maven version from artifacts
+        id: version
+        run: |
+          set -euo pipefail
+          ARTIFACT=$(ls artifacts/rskj-core-*.jar \
+            | grep -v -- '-all.jar' | grep -v -- '-sources.jar' | grep -v -- '-javadoc.jar' \
+            | head -1)
+          V="${ARTIFACT##*/}"
+          V="${V#rskj-core-}"
+          V="${V%.jar}"
+          echo "maven-version=${V}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Maven version matches tag
+        env:
+          EXPECTED: ${{ steps.tag.outputs.expected_maven_version }}
+          ACTUAL: ${{ steps.version.outputs.maven-version }}
+        run: |
+          set -euo pipefail
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "ERROR: Maven version from artifacts (${ACTUAL}) does not match expected (${EXPECTED}) for tag ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+          echo "Maven version ${ACTUAL} matches tag convention"
+
+      - name: Set S3 destination
+        id: s3
+        env:
+          MAVEN_VERSION: ${{ steps.version.outputs.maven-version }}
+        run: |
+          set -euo pipefail
+          S3_DEST="s3://${S3_BUCKET}/co/rsk/rskj-core/${MAVEN_VERSION}"
+          echo "dest=${S3_DEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@d01d678e65d6d2bd9d5ca7a95d6f07b00e25f2c2 # v6.2.2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_RSKJ }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Upload artifacts to S3 Maven repository
+        env:
+          S3_DEST: ${{ steps.s3.outputs.dest }}
+        run: |
+          set -euo pipefail
+          echo "Uploading to ${S3_DEST}/"
+          aws s3 sync \
+            artifacts/ \
+            "${S3_DEST}/" \
+            --exclude '*' \
+            --include '*.jar' \
+            --include '*.pom' \
+            --include '*.module'
+
+      - name: Generate and upload checksum file
+        env:
+          S3_DEST: ${{ steps.s3.outputs.dest }}
+        run: |
+          set -euo pipefail
+          cd artifacts
+          sha256sum * | grep -v "javadoc.jar" > checksums.txt
+          echo "Generated checksums.txt:"
+          cat checksums.txt
+          aws s3 cp checksums.txt "${S3_DEST}/"
