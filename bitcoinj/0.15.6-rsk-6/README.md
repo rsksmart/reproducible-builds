@@ -22,6 +22,8 @@ f5d841932b9ae6e8c2daa4ef8031f58fa3f6f12c731bedcd4473b7396161de86  bitcoinj-core-
 
 ```
 $ docker run --name temp-container bitcoinj/0.15.6-rsk-6 /bin/true
-$ docker cp temp-container:/home/bitcoinj/ ./libs
+$ docker cp temp-container:/home/bitcoinj/bitcoinj-core-0.15.6-rsk-6.jar ./core-0.15.6-rsk-6.jar
+$ docker cp temp-container:/home/bitcoinj/bitcoinj-core-0.15.6-rsk-6.pom ./core-0.15.6-rsk-6.pom
+$ docker cp temp-container:/home/bitcoinj/bitcoinj-core-0.15.6-rsk-6-sources.jar ./core-0.15.6-rsk-6-sources.jar
 $ docker rm temp-container
 ```
