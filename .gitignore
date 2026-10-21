@@ -1,3 +1,11 @@
 .idea/
 .code/
-.DS_Store 
+.DS_Store
+
+# Claude Code — ignore local/sensitive files, keep shared project files
+.claude/settings.local.json
+.claude/todos/
+.claude/memory/
+!.claude/skills/
+!.claude/skills/**/SKILL.md
+!.claude/CLAUDE.md
