@@ -1,0 +1,100 @@
+## Copyright (c) 2026 Rootstock Labs
+## Rebuild every reproducible-build folder that a pull request changes and check
+## that the artifact hashes match the ones documented in the folder's README.
+##
+## This proves the Dockerfile produces the documented hashes on a clean runner.
+## It does not prove the Dockerfile builds the right source: reviewers must still
+## check the repository URL and tag in the Dockerfile diff.
+
+name: Verify Reproducible Build
+
+on:
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: verify-reproducible-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      folders: ${{ steps.changed.outputs.folders }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Find changed build folders
+        id: changed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # Components whose README lists hashes as "<sha256>  <file>" relative
+          # to the image WORKDIR. Add others once their READMEs use that format.
+          COMPONENTS='bitcoinj-thin|bitcoinj|rskj|powpeg-node'
+
+          FOLDERS=$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}" \
+            | { grep -E "^(${COMPONENTS})/[A-Za-z0-9._-]+/" || true; } \
+            | cut -d/ -f1-2 \
+            | sort -u \
+            | while read -r folder; do
+                if [ -f "${folder}/Dockerfile" ]; then echo "$folder"; fi
+              done \
+            | jq -R . | jq -cs .)
+
+          echo "folders=${FOLDERS}" >> "$GITHUB_OUTPUT"
+          echo "Folders to verify: ${FOLDERS}"
+
+  verify:
+    needs: detect
+    if: needs.detect.outputs.folders != '[]'
+    name: verify (${{ matrix.folder }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: ${{ fromJSON(needs.detect.outputs.folders) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Build and compare hashes with README
+        env:
+          FOLDER: ${{ matrix.folder }}
+        run: bash .github/scripts/verify-reproducible-build.sh "$FOLDER"
+
+  # Single stable check name to mark as required in branch protection. Matrix
+  # job names change per PR, and a skipped matrix must still report success.
+  result:
+    name: Reproducible build verified
+    needs: [detect, verify]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check verification result
+        env:
+          DETECT_RESULT: ${{ needs.detect.result }}
+          VERIFY_RESULT: ${{ needs.verify.result }}
+        run: |
+          set -euo pipefail
+          echo "detect: ${DETECT_RESULT}, verify: ${VERIFY_RESULT}"
+          if [ "$DETECT_RESULT" != "success" ]; then
+            exit 1
+          fi
+          case "$VERIFY_RESULT" in
+            success|skipped) ;;
+            *) exit 1 ;;
+          esac
